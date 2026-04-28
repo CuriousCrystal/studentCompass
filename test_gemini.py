@@ -2,7 +2,10 @@ import os
 import requests
 
 # Test the connection using REST API approach
-api_key = "AIzaSyAytoNZiRTkprioNLhFVd9sUmAkn-RVyMg"
+api_key = os.getenv("GOOGLE_GENAI_API_KEY", "")
+
+if not api_key:
+    raise SystemExit("GOOGLE_GENAI_API_KEY is not configured.")
 
 # Try a known working model from the list
 try:

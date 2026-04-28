@@ -75,15 +75,20 @@ const SimplifiedUltimateRoadmap = () => {
     try {
       const searchTerm = currentSkills || 'engineering';
       // Using the official YouTube Data API v3
-      const YOUTUBE_API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY || 'AIzaSyAytoNZiRTkprioNLhFVd9sUmAkn-RVyMg';
+      const YOUTUBE_API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY;
+      if (!YOUTUBE_API_KEY) {
+        console.warn('YouTube API key is not configured; using demo videos.');
+        setYoutubeVideos(getDemoVideos());
+        setShowYouTubeVideos(true);
+        return;
+      }
       const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchTerm + ' course')}&type=video&maxResults=12&key=${YOUTUBE_API_KEY}`;
-      console.log('Fetching YouTube API:', url);
+      console.log('Fetching YouTube API results');
       const response = await fetch(url);
       console.log('YouTube API response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('YouTube API response data:', data);
         
         if (data && data.items && data.items.length > 0) {
           // Process official YouTube API response
@@ -96,7 +101,6 @@ const SimplifiedUltimateRoadmap = () => {
             publishedAt: video.snippet.publishedAt
           }));
           
-          console.log('Processed YouTube videos:', processedVideos);
           setYoutubeVideos(processedVideos);
           setShowYouTubeVideos(true);
         } else {
@@ -133,15 +137,15 @@ const SimplifiedUltimateRoadmap = () => {
     try {
       const searchTerm = currentSkills || 'engineering';
       // Using the Google Books API
-      const GOOGLE_BOOKS_API_KEY = process.env.REACT_APP_GOOGLE_BOOKS_API_KEY || 'AIzaSyAytoNZiRTkprioNLhFVd9sUmAkn-RVyMg';
-      const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchTerm + ' course')}&maxResults=12&key=${GOOGLE_BOOKS_API_KEY}`;
-      console.log('Fetching Google Books API:', url);
+      const GOOGLE_BOOKS_API_KEY = process.env.REACT_APP_GOOGLE_BOOKS_API_KEY;
+      const keyParam = GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : '';
+      const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchTerm + ' course')}&maxResults=12${keyParam}`;
+      console.log('Fetching Google Books API results');
       const response = await fetch(url);
       console.log('Google Books API response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Google Books API response data:', data);
         
         if (data && data.items && data.items.length > 0) {
           // Process Google Books API response
@@ -155,7 +159,6 @@ const SimplifiedUltimateRoadmap = () => {
             pageCount: book.volumeInfo.pageCount || 'Unknown'
           }));
           
-          console.log('Processed books:', processedBooks);
           setBooks(processedBooks);
           setShowBooks(true);
         } else {

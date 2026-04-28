@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 
-from dependencies import get_current_user
+from dependencies import enforce_ai_access
 from models.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -22,11 +22,11 @@ ai_service = AIService()
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_career_paths(
     request: AnalyzeRequest,
-    current_user: Optional[User] = Depends(get_current_user),
+    current_user: Optional[User] = Depends(enforce_ai_access),
 ):
     """
     Analyze skills and expertise to generate career paths, roadmap, and courses.
-    Can be used with or without authentication.
+    Protected by authentication and rate limiting for AI cost control.
     """
     try:
         # Use skills and expertise from request or user profile

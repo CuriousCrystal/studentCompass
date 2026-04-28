@@ -31,9 +31,10 @@ const AIChatBot = () => {
   const searchBooks = async (query) => {
     try {
       // Use the Google Books API with the API key
-      const GOOGLE_BOOKS_API_KEY = process.env.REACT_APP_GOOGLE_BOOKS_API_KEY || 'AIzaSyAytoNZiRTkprioNLhFVd9sUmAkn-RVyMg';
+      const GOOGLE_BOOKS_API_KEY = process.env.REACT_APP_GOOGLE_BOOKS_API_KEY;
+      const keyParam = GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : '';
       const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' course')}&maxResults=3&key=${GOOGLE_BOOKS_API_KEY}`
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query + ' course')}&maxResults=3${keyParam}`
       );
       
       if (response.ok) {

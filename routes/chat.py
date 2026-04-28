@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from models.schemas import ChatMessage, ChatResponse, User
 from services.ai_service import AIService
 from services.mock_user_service import user_service
-from dependencies import get_current_user
+from dependencies import enforce_ai_access
 from typing import Optional
 import json
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.post("/", response_model=ChatResponse)
 async def chat_with_career_assistant(
     chat_message: ChatMessage,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(enforce_ai_access)
 ):
     """
     Interactive career guidance chat powered by Gemini AI.
@@ -149,7 +149,7 @@ Let's create your personalized roadmap together! 🚪"""
 @router.post("/update-skills", response_model=ChatResponse)
 async def update_skills_via_chat(
     chat_message: ChatMessage,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(enforce_ai_access)
 ):
     """
     Legacy endpoint - redirects to main chat endpoint
