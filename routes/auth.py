@@ -1,12 +1,29 @@
 from datetime import timedelta
+import inspect
 from fastapi import APIRouter, Depends, HTTPException, status
 from models.schemas import UserCreate, UserLogin, UserUpdate, User, Token
 from services.mock_user_service import user_service
 from services.auth_service import auth_service
-from dependencies import get_current_user_required
+import dependencies
+from dependencies import security
 from config.settings import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
+
+async def get_current_user_required(credentials=Depends(security)) -> User:
+    """Patch-friendly wrapper around the shared auth dependency."""
+    result = dependencies.get_current_user_required(credentials)
+    if inspect.isawaitable(result):
+        return await result
+    return result
+
+
+async def _current_user_dependency(credentials=Depends(security)) -> User:
+    result = get_current_user_required(credentials)
+    if inspect.isawaitable(result):
+        return await result
+    return result
 
 @router.post("/register", response_model=Token)
 async def register(user_data: UserCreate):
@@ -64,14 +81,14 @@ async def login(user_credentials: UserLogin):
     )
 
 @router.get("/me", response_model=User)
-async def get_me(current_user: User = Depends(get_current_user_required)):
+async def get_me(current_user: User = Depends(_current_user_dependency)):
     """Get current user information"""
     return current_user
 
 @router.put("/me", response_model=User)
 async def update_me(
     user_update: UserUpdate,
-    current_user: User = Depends(get_current_user_required)
+    current_user: User = Depends(_current_user_dependency)
 ):
     """Update current user information"""
     try:

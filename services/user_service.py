@@ -1,10 +1,15 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 try:
     from google.cloud import firestore
 except ModuleNotFoundError:  # pragma: no cover
-    firestore = None
+    class _UnavailableFirestore:
+        class Client:
+            def __init__(self, *args, **kwargs):
+                raise RuntimeError("Firestore dependency is not installed")
+
+    firestore = _UnavailableFirestore()
 from models.schemas import User, UserCreate, UserUpdate
 from services.auth_service import auth_service
 import os
@@ -14,14 +19,11 @@ class UserService:
     
     def __init__(self):
         self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "your-project-id")
-        if firestore is None:
+        try:
+            self.firestore_client = firestore.Client(project=self.project_id)
+        except Exception as e:
+            print(f"Warning: Could not initialize Firestore client: {e}")
             self.firestore_client = None
-        else:
-            try:
-                self.firestore_client = firestore.Client(project=self.project_id)
-            except Exception as e:
-                print(f"Warning: Could not initialize Firestore client: {e}")
-                self.firestore_client = None
     
     async def create_user(self, user_data: UserCreate) -> Optional[User]:
         """Create a new user"""
@@ -35,7 +37,7 @@ class UserService:
         
         # Create user document
         user_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         user_doc = {
             "id": user_id,
@@ -124,7 +126,7 @@ class UserService:
                 raise Exception("User not found")
             
             # Prepare update data
-            update_data = {"updated_at": datetime.utcnow()}
+            update_data = {"updated_at": datetime.now(timezone.utc)}
             
             if user_update.full_name is not None:
                 update_data["full_name"] = user_update.full_name
@@ -139,6 +141,8 @@ class UserService:
             # Return updated user
             return await self.get_user_by_id(user_id)
         except Exception as e:
+            if str(e) == "User not found":
+                raise
             print(f"Error updating user: {e}")
             raise Exception("Failed to update user")
     

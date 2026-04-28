@@ -1,11 +1,26 @@
 import json
 import os
 import requests
+import sys
+import builtins
 from typing import Dict, Any, List
 from datetime import datetime
 import re
 import random
 from dotenv import load_dotenv
+
+
+def print(*args, **kwargs):
+    """Print status messages without crashing on narrow Windows encodings."""
+    try:
+        builtins.print(*args, **kwargs)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+        safe_args = [
+            str(arg).encode(encoding, errors="replace").decode(encoding)
+            for arg in args
+        ]
+        builtins.print(*safe_args, **kwargs)
 
 # Load environment variables
 load_dotenv()
@@ -2247,3 +2262,13 @@ Remember, every expert was once a beginner. You've got this, and I'm cheering yo
             "extracted_skills": extracted_skills,
             "updated_skills": updated_skills
         }
+
+
+def analyze_career_path(skills: str, expertise: str) -> Dict[str, Any]:
+    """Backward-compatible module function for older callers/tests."""
+    return AIService().generate_career_analysis(skills, expertise)
+
+
+def extract_skills_from_message(message: str, current_skills: str = "") -> Dict[str, Any]:
+    """Backward-compatible module function for older callers/tests."""
+    return AIService().extract_skills_from_message(message, current_skills)

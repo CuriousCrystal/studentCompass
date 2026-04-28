@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from models.schemas import User, UserCreate, UserUpdate
 from services.auth_service import auth_service
@@ -22,7 +22,7 @@ class MockUserService:
         
         # Create user document
         user_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         user_doc = {
             "id": user_id,
@@ -86,7 +86,7 @@ class MockUserService:
         if user_update.expertise is not None:
             user_data["expertise"] = user_update.expertise
         
-        user_data["updated_at"] = datetime.utcnow()
+        user_data["updated_at"] = datetime.now(timezone.utc)
         
         # Return updated user
         return await self.get_user_by_id(user_id)

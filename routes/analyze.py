@@ -1,7 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+import inspect
+from fastapi import APIRouter, HTTPException, Depends, Request, status
+from fastapi.security import HTTPAuthorizationCredentials
 from typing import Optional
 
-from dependencies import enforce_ai_access
+from config.settings import settings
+from dependencies import get_current_user, security, _check_ai_rate_limit
 from models.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -19,10 +22,36 @@ router = APIRouter(tags=["analyze"])
 ai_service = AIService()
 
 
+async def _resolve_optional_user(credentials: Optional[HTTPAuthorizationCredentials]):
+    result = get_current_user(credentials)
+    if inspect.isawaitable(result):
+        return await result
+    return result
+
+
+async def _analyze_access_dependency(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> Optional[User]:
+    current_user = await _resolve_optional_user(credentials)
+
+    if settings.REQUIRE_AUTH_FOR_AI and current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication is required for AI-powered endpoints.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    client_host = request.client.host if request.client else "unknown"
+    client_key = current_user.email if current_user else client_host
+    _check_ai_rate_limit(client_key)
+    return current_user
+
+
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_career_paths(
     request: AnalyzeRequest,
-    current_user: Optional[User] = Depends(enforce_ai_access),
+    current_user: Optional[User] = Depends(_analyze_access_dependency),
 ):
     """
     Analyze skills and expertise to generate career paths, roadmap, and courses.

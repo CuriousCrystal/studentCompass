@@ -2,7 +2,7 @@
 Unit tests for AuthService
 """
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, Mock
 from jose import jwt
 
@@ -70,8 +70,8 @@ class TestAuthService:
         
         # Verify expiry time
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        exp_time = datetime.fromtimestamp(payload["exp"])
-        expected_exp = datetime.utcnow() + expires_delta
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        expected_exp = datetime.now(timezone.utc) + expires_delta
         
         # Allow 1 minute tolerance for test execution time
         assert abs((exp_time - expected_exp).total_seconds()) < 60

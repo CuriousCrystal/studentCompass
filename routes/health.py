@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from datetime import datetime, timezone
 from models.schemas import HealthResponse, RootResponse
 
 router = APIRouter(tags=["health"])
@@ -11,4 +12,8 @@ async def root():
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
-    return HealthResponse(status="healthy", service="career-analyzer")
+    return HealthResponse(
+        status="healthy",
+        service="career-analyzer",
+        timestamp=datetime.now(timezone.utc),
+    )

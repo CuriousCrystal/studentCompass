@@ -11,6 +11,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 # Move AIService initialization inside the function to ensure proper environment loading
 # ai_service = AIService()  # This line will be removed
 
+@router.post("", response_model=ChatResponse)
 @router.post("/", response_model=ChatResponse)
 async def chat_with_career_assistant(
     chat_message: ChatMessage,
@@ -134,6 +135,7 @@ Let's create your personalized roadmap together! 🚪"""
         
         return ChatResponse(
             bot_message=ai_response,
+            response=ai_response,
             extracted_skills=extracted_skills,
             updated_skills=updated_skills,
             user=current_user

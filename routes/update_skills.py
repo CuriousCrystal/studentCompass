@@ -22,15 +22,24 @@ async def update_skills(request: UpdateSkillsRequest):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
+        current_skills = user.get("skills", "") if isinstance(user, dict) else (user.skills or "")
+
         # Extract skills using Vertex AI (using the available method)
-        extraction_result = ai_service.extract_skills_from_message(request.message, user.skills if user.skills else "")
-        extracted_skills_data = extraction_result.get("extracted_skills", [])
+        extraction_result = ai_service.extract_skills_from_message(request.message, current_skills)
+        if isinstance(extraction_result, list):
+            extracted_skills_data = extraction_result
+            existing_skills = [skill.strip() for skill in current_skills.split(",") if skill.strip()]
+            for skill_data in extracted_skills_data:
+                skill_name = skill_data.get("skill") if isinstance(skill_data, dict) else str(skill_data)
+                if skill_name and skill_name not in existing_skills:
+                    existing_skills.append(skill_name)
+            updated_skills_string = ", ".join(existing_skills)
+        else:
+            extracted_skills_data = extraction_result.get("extracted_skills", [])
+            updated_skills_string = extraction_result.get("updated_skills", "")
         
         # Convert to Pydantic models
         extracted_skills = [SkillExtraction(**skill_data) for skill_data in extracted_skills_data]
-        
-        # Get updated skills list
-        updated_skills_string = extraction_result.get("updated_skills", "")
         
         # Update user skills in database
         user_update = UserUpdate(skills=updated_skills_string)

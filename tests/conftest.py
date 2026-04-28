@@ -3,8 +3,8 @@ Global test configuration and fixtures for pytest
 """
 import pytest
 import asyncio
-from typing import AsyncGenerator
-from httpx import AsyncClient
+import inspect
+from httpx import ASGITransport, AsyncClient
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 import os
@@ -21,7 +21,7 @@ from services.mock_user_service import MockUserService
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 
@@ -32,10 +32,52 @@ def client():
         yield test_client
 
 @pytest.fixture
-async def async_client():
+def async_client(event_loop):
     """Create an async test client for the FastAPI app."""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
+    transport = ASGITransport(app=app)
+    ac = AsyncClient(transport=transport, base_url="http://test")
+    yield ac
+    event_loop.run_until_complete(ac.aclose())
+
+
+def pytest_configure(config):
+    """Register project markers when pytest.ini is not loaded by older tooling."""
+    for marker in (
+        "unit: Unit tests",
+        "integration: Integration tests",
+        "frontend: Frontend tests",
+        "slow: Slow running tests",
+        "auth: Authentication tests",
+        "ai_service: AI service tests",
+        "asyncio: Async tests",
+    ):
+        config.addinivalue_line("markers", marker)
+
+
+def pytest_pyfunc_call(pyfuncitem):
+    """Run async tests even when pytest-asyncio is not installed locally."""
+    if pyfuncitem.config.pluginmanager.hasplugin("asyncio"):
+        return None
+
+    test_func = pyfuncitem.obj
+    if not inspect.iscoroutinefunction(test_func):
+        return None
+
+    loop = pyfuncitem.funcargs.get("event_loop")
+    test_args = {
+        arg: pyfuncitem.funcargs[arg]
+        for arg in pyfuncitem._fixtureinfo.argnames
+    }
+
+    if loop is None:
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(test_func(**test_args))
+        finally:
+            loop.close()
+    else:
+        loop.run_until_complete(test_func(**test_args))
+    return True
 
 @pytest.fixture
 def mock_user_service():

@@ -1,11 +1,11 @@
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import Any, List, Optional
 from datetime import datetime
 
 class AnalyzeRequest(BaseModel):
     """Request model for career analysis"""
-    skills: str
-    expertise: str
+    skills: Optional[str] = None
+    expertise: Optional[str] = None
 
 class Certification(BaseModel):
     """Certification recommendation"""
@@ -23,22 +23,26 @@ class CareerPath(BaseModel):
     required_skills: List[str]
     salary_range: str
     growth_prospect: str
+    market_demand: Optional[str] = None
 
 class Course(BaseModel):
     """Course recommendation"""
     title: str
     provider: str
     duration: str
-    difficulty: str
-    url: str
+    difficulty: Optional[str] = None
+    url: Optional[str] = None
+    level: Optional[str] = None
     type: Optional[str] = None
 
 class RoadmapStep(BaseModel):
     """Roadmap step information"""
-    step: int
-    title: str
-    description: str
+    step: Optional[int] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    phase: Optional[str] = None
     duration: str
+    topics: Optional[List[str]] = None
     resources: List[str]
 
 class AnalyzeResponse(BaseModel):
@@ -53,6 +57,7 @@ class HealthResponse(BaseModel):
     """Health check response"""
     status: str
     service: str
+    timestamp: Optional[datetime] = None
 
 class RootResponse(BaseModel):
     """Root endpoint response"""
@@ -60,14 +65,21 @@ class RootResponse(BaseModel):
 
 class MockTestRequest(BaseModel):
     """Request model for mock test generation"""
-    skills: str
-    expertise: str
+    skills: Optional[str] = None
+    expertise: Optional[str] = None
     topic: Optional[str] = None
+    role: Optional[str] = None
+    difficulty: Optional[str] = None
+    question_count: Optional[int] = 5
 
 class MockTestQuestion(BaseModel):
     """Mock test question model"""
     question: str
-    answer: str
+    answer: Optional[str] = None
+    options: Optional[List[str]] = None
+    correct_answer: Optional[str] = None
+    explanation: Optional[str] = None
+    difficulty: Optional[str] = None
 
 class MockTestResponse(BaseModel):
     """Mock test response model"""
@@ -103,8 +115,8 @@ class User(BaseModel):
     full_name: str
     skills: Optional[str] = None
     expertise: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 class Token(BaseModel):
     """JWT token response"""
@@ -124,7 +136,8 @@ class ChatMessage(BaseModel):
 class ChatResponse(BaseModel):
     """Chat response model"""
     bot_message: str
-    extracted_skills: List[str]
+    response: Optional[str] = None
+    extracted_skills: List[Any]
     updated_skills: str
     user: Optional[User] = None
 
